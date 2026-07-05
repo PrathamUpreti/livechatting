@@ -210,23 +210,26 @@ export default function ChatWidget({
     typingTimeoutRef.current = setTimeout(stopTyping, TYPING_IDLE_MS);
   };
 
-  const submitName = (e) => {
+  const submitJoin = (e) => {
     e.preventDefault();
-    const trimmed = nameInput.trim();
-    if (!trimmed) return;
-    localStorage.setItem("chatwidget_name", trimmed);
-    setDisplayName(trimmed);
-  };
 
-  const submitPasscode = (e) => {
-    e.preventDefault();
+    let finalName = displayName;
+    if (!finalName) {
+      const trimmedName = nameInput.trim();
+      if (!trimmedName) return;
+      localStorage.setItem("chatwidget_name", trimmedName);
+      setDisplayName(trimmedName);
+      finalName = trimmedName;
+    }
+
     const code = passcodeInput.trim();
     if (!code) return;
+
     setCheckingPasscode(true);
     setPasscodeError("");
     socketRef.current?.emit("join_room", {
       roomId,
-      name: displayName || name,
+      name: finalName,
       role,
       passcode: code,
       clientId: clientIdRef.current,
@@ -469,65 +472,55 @@ export default function ChatWidget({
                 </form>
               </div>
             </>
-          ) : !displayName ? (
-            <form
-              onSubmit={submitName}
-              className="flex flex-1 flex-col items-center justify-center gap-3 bg-wa-bg px-8 text-center"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-wa-header/10 text-wa-header">
-                <GroupGlyph />
-              </div>
-              <p className="font-display text-[15px] font-semibold text-wa-ink">
-                What should we call you?
-              </p>
-              <p className="text-[12.5px] text-wa-sub">
-                This name shows next to your messages in the group.
-              </p>
-              <input
-                type="text"
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                placeholder="Your name"
-                maxLength={30}
-                autoFocus
-                className="w-full max-w-[220px] rounded-full border border-black/10 bg-white px-4 py-2 text-center text-[13.5px] text-wa-ink placeholder:text-wa-sub focus:outline-none focus:ring-2 focus:ring-wa-accent/40"
-              />
-              <button
-                type="submit"
-                disabled={!nameInput.trim()}
-                className="rounded-full bg-wa-accent px-5 py-2 text-[13px] font-semibold text-white transition disabled:opacity-40"
-              >
-                Continue
-              </button>
-            </form>
           ) : (
             <form
-              onSubmit={submitPasscode}
+              onSubmit={submitJoin}
               className="flex flex-1 flex-col items-center justify-center gap-3 bg-wa-bg px-8 text-center"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-wa-header/10 text-wa-header">
                 <LockGlyph />
               </div>
               <p className="font-display text-[15px] font-semibold text-wa-ink">
-                This group is private
+                {displayName ? "This group is private" : "Join the group"}
               </p>
               <p className="text-[12.5px] text-wa-sub">
-                Hi {displayName} — enter the passcode to join.
+                {displayName
+                  ? `Hi ${displayName} — enter the passcode to join.`
+                  : "Enter your name and the group passcode."}
               </p>
+
+              {!displayName && (
+                <input
+                  type="text"
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  placeholder="Your name"
+                  maxLength={30}
+                  autoFocus
+                  className="w-full max-w-[220px] rounded-full border border-black/10 bg-white px-4 py-2 text-center text-[13.5px] text-wa-ink placeholder:text-wa-sub focus:outline-none focus:ring-2 focus:ring-wa-accent/40"
+                />
+              )}
+
               <input
                 type="password"
                 value={passcodeInput}
                 onChange={(e) => setPasscodeInput(e.target.value)}
                 placeholder="Enter passcode"
-                autoFocus
+                autoFocus={!!displayName}
                 className="w-full max-w-[220px] rounded-full border border-black/10 bg-white px-4 py-2 text-center text-[13.5px] text-wa-ink placeholder:text-wa-sub focus:outline-none focus:ring-2 focus:ring-wa-accent/40"
               />
+
               {passcodeError && (
                 <p className="text-[12px] text-[#D93025]">{passcodeError}</p>
               )}
+
               <button
                 type="submit"
-                disabled={!passcodeInput.trim() || checkingPasscode}
+                disabled={
+                  (!displayName && !nameInput.trim()) ||
+                  !passcodeInput.trim() ||
+                  checkingPasscode
+                }
                 className="rounded-full bg-wa-accent px-5 py-2 text-[13px] font-semibold text-white transition disabled:opacity-40"
               >
                 {checkingPasscode ? "Checking…" : "Join group"}

@@ -71,15 +71,21 @@ other in real time.
 - **Typing indicator**: keystrokes emit `typing_start` once, then a
   debounce timer (1.5s of inactivity) emits `typing_stop`. Sending a
   message also stops typing immediately.
-- **Private access**: opening the widget first asks for a **name**, once —
-  saved in `localStorage` under `chatwidget_name` so returning visitors
-  aren't asked again. After that, it always asks for the **passcode**,
-  every single time the site is reopened (the passcode is intentionally
-  never persisted, unlike the name). `join_room` requires this passcode to
-  match `ACCESS_PASSCODE` on the server. Sockets that haven't passed this
-  check are marked unauthorized and every other event (`send_message`,
+- **Private access**: opening the widget for the first time on a device
+  shows one combined form asking for a **name** and the **passcode**
+  together. The name is saved to `localStorage` (`chatwidget_name`) so it's
+  never asked again on that browser — but the passcode is intentionally
+  never persisted, so returning visitors see just the passcode field every
+  time they reopen the site. `join_room` requires this passcode to match
+  `ACCESS_PASSCODE` on the server. Sockets that haven't passed this check
+  are marked unauthorized and every other event (`send_message`,
   `typing_start`/`typing_stop`) is ignored for them — so the passcode isn't
   just a UI gate, it's enforced server-side too.
+  > **Note:** `localStorage` is shared across every tab of the same
+  > browser. To try out multiple "people" while testing, use separate
+  > browsers (e.g. Chrome + Firefox) or a normal window + an incognito
+  > window — two tabs of the same normal window will share the same saved
+  > name.
 - **Persistent message ownership (bug fix)**: messages are attributed to a
   `clientId` generated once and stored in `localStorage`
   (`chatwidget_client_id`) — *not* to Socket.io's `socket.id`, which changes
